@@ -11,7 +11,5 @@ enpit2025アジャイルスクラム開発講義用
 iOS, Android デバイス
 ### 使用言語・フレームワーク
 - Dart
-- Swift
-- MySQL
 - Flutter
 ## エレベーターピッチ
