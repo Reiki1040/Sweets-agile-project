@@ -1,23 +1,9 @@
 import 'package:flutter/material.dart';
 import 'add_contact_screen.dart'; // 新規登録画面
-
-// 連絡先データを表現するためのクラス（モデル）
-// NOTE: 将来的には別のファイル（例: models/contact.dart）に分けるのがおすすめです。
-class Contact {
-  final String companyName;
-  final String personName;
-  final String phoneNumber;
-
-  // コンストラクタ
-  const Contact({
-    required this.companyName,
-    required this.personName,
-    required this.phoneNumber,
-  });
-}
+import 'contact.dart'; // Contactモデル
+import 'contact_detail_screen.dart'; // 詳細画面
 
 /// ホーム画面
-/// 連絡先の一覧表示と検索機能を持つ。
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -26,49 +12,100 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // すべての連絡先を保持するリスト（ダミーデータ）
-  // NOTE: 将来的にこの部分はデータベースから取得するデータに置き換わります。
-  final List<Contact> _allContacts = [
-    const Contact(companyName: '株式会社A', personName: '山田 太郎', phoneNumber: '090-1111-1111'),
-    const Contact(companyName: 'Bエージェント', personName: '鈴木 花子', phoneNumber: '080-2222-2222'),
-    const Contact(companyName: '株式会社C', personName: '佐藤 一郎', phoneNumber: '070-3333-3333'),
-    const Contact(companyName: 'Dエージェント', personName: '高橋 次郎', phoneNumber: '090-4444-4444'),
-  ];
-
-  // 検索結果を保持するためのリスト
+  final _searchController = TextEditingController();
+  final List<Contact> _allContacts = [];
   List<Contact> _filteredContacts = [];
 
-  // initStateはウィジェットが作成された最初の瞬間に一度だけ呼ばれる
   @override
   void initState() {
     super.initState();
-    // 最初はすべての連絡先を表示
     _filteredContacts = _allContacts;
   }
 
-  // 検索文字列に基づいて連絡先をフィルタリングするメソッド
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// 検索文字列に基づいて連絡先をフィルタリングするメソッド
   void _filterContacts(String query) {
-    // 検索クエリが空の場合は、すべての連絡先を表示
+    // 検索結果を格納する一時リスト
+    final List<Contact> searchResult;
     if (query.isEmpty) {
-      setState(() {
-        _filteredContacts = _allContacts;
-      });
-      return;
+      // クエリが空なら全件表示
+      searchResult = _allContacts;
+    } else {
+      // クエリに一致するものを検索
+      searchResult = _allContacts.where((contact) {
+        final queryLower = query.toLowerCase();
+        return contact.companyName.toLowerCase().contains(queryLower) ||
+            contact.personName.toLowerCase().contains(queryLower) ||
+            contact.phoneNumber.contains(query);
+      }).toList();
     }
-    // 新しい検索結果を格納するリスト
-    final List<Contact> searchResult = [];
-    for (final contact in _allContacts) {
-      // 会社名、担当者名、電話番号のいずれかにクエリが含まれていたら結果に追加
-      if (contact.companyName.toLowerCase().contains(query.toLowerCase()) ||
-          contact.personName.toLowerCase().contains(query.toLowerCase()) ||
-          contact.phoneNumber.contains(query)) {
-        searchResult.add(contact);
-      }
-    }
-    // 画面を更新して、フィルタリングされたリストを表示
+    // 画面を更新
     setState(() {
       _filteredContacts = searchResult;
     });
+  }
+
+  /// 新規登録画面に遷移し、結果を受け取るメソッド
+  void _navigateToAddContactScreen() async {
+    final newContact = await Navigator.push<Contact>(
+      context,
+      MaterialPageRoute(builder: (context) => const AddContactScreen()),
+    );
+
+    if (newContact != null) {
+      setState(() {
+        _allContacts.add(newContact);
+        _searchController.clear(); // 検索バーをクリア
+        _filterContacts(''); // フィルタをリセット
+      });
+    }
+  }
+
+  /// 詳細画面に遷移し、結果（更新 or 削除）を受け取るメソッド
+  void _navigateToDetailScreen(Contact contactToDetail) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ContactDetailScreen(contact: contactToDetail),
+      ),
+    );
+
+    if (result == true) { // 削除された場合
+      setState(() {
+        _allContacts.remove(contactToDetail);
+        _filterContacts(_searchController.text);
+      });
+    } else if (result is Contact) { // 更新された場合
+      setState(() {
+        final index = _allContacts.indexOf(contactToDetail);
+        if (index != -1) {
+          _allContacts[index] = result;
+        }
+        _filterContacts(_searchController.text);
+      });
+    }
+  }
+
+  /// リストが空の場合に表示するメッセージWidget
+  Widget _buildEmptyState() {
+    // 検索バーに文字が入力されているかどうかでメッセージを分岐
+    final isSearching = _searchController.text.isNotEmpty;
+    final message = isSearching
+        ? '登録されていません。\n就職活動に関係ない連絡の可能性があります。'
+        : 'まだ連絡先が登録されていません。';
+
+    return Center(
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Colors.grey[600], height: 1.5),
+      ),
+    );
   }
 
   @override
@@ -76,15 +113,15 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('連絡先一覧'),
-        automaticallyImplyLeading: false, // 戻るボタンを非表示
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [
-          // 検索バー
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
-              onChanged: _filterContacts, // 入力が変わるたびにフィルタリングメソッドを呼び出す
+              controller: _searchController,
+              onChanged: _filterContacts,
               decoration: InputDecoration(
                 labelText: '検索',
                 hintText: '企業名, 担当者名, 電話番号...',
@@ -95,44 +132,44 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          // 連絡先リスト
-          // Expandedを使うことで、残りのスペースすべてをリストが使うようになる
           Expanded(
-            child: ListView.builder(
-              itemCount: _filteredContacts.length,
-              itemBuilder: (context, index) {
-                final contact = _filteredContacts[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      child: Text(contact.companyName[0]),
-                    ),
-                    title: Text(contact.companyName),
-                    subtitle: Text('${contact.personName} - ${contact.phoneNumber}'),
-                    onTap: () {
-                      // TODO: タップしたら詳細画面に遷移する処理を将来的に追加
+            child: _filteredContacts.isEmpty
+                ? _buildEmptyState() // リストが空の場合の表示
+                : ListView.builder(
+                    itemCount: _filteredContacts.length,
+                    itemBuilder: (context, index) {
+                      final contact = _filteredContacts[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            child: Text(contact.companyName.isNotEmpty ? contact.companyName[0] : '?'),
+                          ),
+                          title: Text(contact.companyName),
+                          subtitle: Text('${contact.personName} - ${contact.phoneNumber}'),
+                          trailing: Chip(
+                            label: Text(
+                              contact.status.displayName,
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                            backgroundColor: contact.status.displayColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                          ),
+                          onTap: () {
+                            _navigateToDetailScreen(contact);
+                          },
+                        ),
+                      );
                     },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
-      // 新規登録ボタン
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // ボタンが押されたら新規登録画面に遷移
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddContactScreen()),
-          );
-        },
-        backgroundColor: Colors.lightBlue, // ボタンの色を水色に変更
+        onPressed: _navigateToAddContactScreen,
+        backgroundColor: Colors.lightBlue,
         child: const Icon(Icons.add),
       ),
     );
   }
 }
-
