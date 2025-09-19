@@ -20,20 +20,20 @@ class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   List<Contact> _filteredContacts = [];
 
+  // 選択中のステータスフィルターを管理する状態変数
+  SelectionStatus? _selectedStatusFilter; // nullの場合は「すべて」を示す
+
   @override
   void initState() {
     super.initState();
-    // initStateでは、親から渡されたデータで初期化する
-    _updateFilteredContacts(widget.contacts);
+    _applyFilters(); // 初期表示時にフィルターを適用
   }
 
-  // 親ウィジェットから渡されるデータが変更されたときに呼ばれる
   @override
   void didUpdateWidget(covariant HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 親のデータソース（_allContacts）が変更されたら、こちらも更新する
     if (widget.contacts != oldWidget.contacts) {
-      _updateFilteredContacts(widget.contacts);
+      _applyFilters(); // 親ウィジェットのデータが更新されたらフィルターを再適用
     }
   }
 
@@ -42,34 +42,43 @@ class _HomeScreenState extends State<HomeScreen> {
     _searchController.dispose();
     super.dispose();
   }
-  
-  // 検索とリストの更新を1つのメソッドにまとめる
-  void _updateFilteredContacts(List<Contact> allContacts) {
+
+  /// テキスト検索とステータスフィルターの両方を適用するメソッド
+  void _applyFilters() {
     final query = _searchController.text;
+    List<Contact> searchResult;
+
+    // 1. テキスト検索フィルタリング
     if (query.isEmpty) {
-      _filteredContacts = allContacts;
+      searchResult = widget.contacts;
     } else {
-      _filteredContacts = allContacts.where((contact) {
-        final queryLower = query.toLowerCase();
+      final queryLower = query.toLowerCase();
+      searchResult = widget.contacts.where((contact) {
+        final phoneNumberWithoutHyphens = contact.phoneNumber.replaceAll('-', '');
         return contact.companyName.toLowerCase().contains(queryLower) ||
             contact.personName.toLowerCase().contains(queryLower) ||
-            contact.phoneNumber.contains(query);
+            phoneNumberWithoutHyphens.startsWith(query);
       }).toList();
     }
-  }
 
-  /// 検索文字列に基づいて連絡先をフィルタリング
-  void _filterContacts(String query) {
+    // 2. 選考ステータスフィルタリング
+    if (_selectedStatusFilter != null) {
+      searchResult = searchResult.where((contact) {
+        return contact.status == _selectedStatusFilter;
+      }).toList();
+    }
+    
+    // 画面を更新
     setState(() {
-      _updateFilteredContacts(widget.contacts);
+      _filteredContacts = searchResult;
     });
   }
 
-  /// リストが空の場合のメッセージWidget
+  /// リストが空の場合に表示するメッセージWidget
   Widget _buildEmptyState() {
-    final isSearching = _searchController.text.isNotEmpty;
+    final isSearching = _searchController.text.isNotEmpty || _selectedStatusFilter != null;
     final message = isSearching
-        ? '登録されていません。\n就職活動に関係ない連絡の可能性があります。'
+        ? '条件に一致する連絡先はありません。'
         : 'まだ連絡先が登録されていません。';
 
     return Center(
@@ -77,16 +86,45 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// ステータスフィルタ用のチップを生成するWidget
+  Widget _buildStatusFilters() {
+    // 全てのステータスと「すべて」を追加したリストを作成
+    final List<SelectionStatus?> allFilters = [null, ...SelectionStatus.values];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        children: allFilters.map((status) {
+          final isSelected = _selectedStatusFilter == status;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: ChoiceChip(
+              label: Text(status?.displayName ?? 'すべて'), // nullなら「すべて」と表示
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  // チップ選択でフィルターの状態を更新
+                  _selectedStatusFilter = selected ? status : null;
+                  _applyFilters(); // フィルターを再適用
+                });
+              },
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // AppBarを削除し、PaddingとTextFieldのみにする
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: TextField(
             controller: _searchController,
-            onChanged: _filterContacts,
+            onChanged: (value) => _applyFilters(), // 入力ごとにフィルターを適用
             decoration: InputDecoration(
               labelText: '検索',
               hintText: '企業名, 担当者名, 電話番号...',
@@ -97,6 +135,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+        // ステータスフィルター用のチップを追加
+        _buildStatusFilters(),
+        const SizedBox(height: 8),
         Expanded(
           child: _filteredContacts.isEmpty
               ? _buildEmptyState()
