@@ -3,14 +3,14 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'contact.dart';
 
-// カレンダーに表示するためのイベント情報をまとめるヘルパークラス
+/// カレンダーに表示するためのイベント情報をまとめるヘルパークラス。
 class CalendarDisplayEvent {
   final String companyName;
   final ScheduleEvent event;
   CalendarDisplayEvent({required this.companyName, required this.event});
 }
 
-/// カレンダー表示画面
+/// カレンダー表示画面。
 class CalendarScreen extends StatefulWidget {
   final List<Contact> contacts;
   const CalendarScreen({super.key, required this.contacts});
@@ -43,7 +43,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  /// 全連絡先の全イベントを日付ごとにグループ化する
+  /// 全連絡先の全イベントを日付ごとにグループ化する。
   Map<DateTime, List<CalendarDisplayEvent>> _groupEventsByDate(List<Contact> contacts) {
     final Map<DateTime, List<CalendarDisplayEvent>> eventMap = {};
     for (final contact in contacts) {
@@ -63,13 +63,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return eventMap;
   }
 
-  /// 特定の日のイベントリストを取得する
+  /// 特定の日のイベントリストを取得する。
   List<CalendarDisplayEvent> _getEventsForDay(DateTime day) {
     final dateOnly = DateTime.utc(day.year, day.month, day.day);
     return _eventsByDate[dateOnly] ?? [];
   }
 
-  /// 日付が選択されたときに呼ばれる
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     setState(() {
       _selectedDay = selectedDay;
@@ -89,14 +88,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
           selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
           onDaySelected: _onDaySelected,
           eventLoader: _getEventsForDay,
-          // ★修正点：表示を月表示に固定し、切り替えボタンを非表示にする
           calendarFormat: CalendarFormat.month,
           availableCalendarFormats: const {
             CalendarFormat.month: 'Month',
           },
         ),
         const SizedBox(height: 8.0),
-        // 選択された日の予定一覧を表示
         Expanded(
           child: ListView.builder(
             itemCount: _selectedEvents.length,

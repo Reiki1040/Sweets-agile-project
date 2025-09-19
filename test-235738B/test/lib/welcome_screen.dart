@@ -47,7 +47,7 @@ class WelcomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16.0),
         const Text(
-          '知らない番号からの着信を自動で識別し、\n迷惑電話からあなたを守ります。',
+          '就活生による就活生のための就活アプリ',
           textAlign: TextAlign.center, // テキストを中央揃え
           style: TextStyle(fontSize: 16.0, color: Colors.grey),
         ),

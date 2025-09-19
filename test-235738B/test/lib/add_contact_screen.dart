@@ -61,8 +61,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
       phoneNumber: _phoneController.text,
       url: _urlController.text,
       status: _selectedStatus,
-      events: const [], // 新規登録時は空の予定リスト
+      events: const [],
+      memos: const [],
     );
+    // ★修正点：データを前の画面に戻り値として渡す
     if (mounted) {
       Navigator.pop(context, newContact);
     }

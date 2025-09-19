@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart'; // listEquals を使うためにインポート
 import 'package:flutter/material.dart';
 
 /// 選考ステータスを定義する列挙型
@@ -20,6 +21,18 @@ class ScheduleEvent {
   final DateTime date;
 
   const ScheduleEvent({required this.title, required this.date});
+
+  // ★修正点：オブジェクトの比較を可能にする
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ScheduleEvent &&
+          runtimeType == other.runtimeType &&
+          title == other.title &&
+          date == other.date;
+
+  @override
+  int get hashCode => title.hashCode ^ date.hashCode;
 }
 
 /// 通話メモを表現するクラス
@@ -28,8 +41,19 @@ class Memo {
   final DateTime createdAt;
 
   const Memo({required this.content, required this.createdAt});
-}
 
+  // ★修正点：オブジェクトの比較を可能にする
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Memo &&
+          runtimeType == other.runtimeType &&
+          content == other.content &&
+          createdAt == other.createdAt;
+
+  @override
+  int get hashCode => content.hashCode ^ createdAt.hashCode;
+}
 
 /// 連絡先データを表現するためのクラス（モデル）
 class Contact {
@@ -39,7 +63,7 @@ class Contact {
   final String url;
   final SelectionStatus status;
   final List<ScheduleEvent> events;
-  final List<Memo> memos; // メモのリストを追加
+  final List<Memo> memos;
 
   const Contact({
     required this.companyName,
@@ -48,10 +72,9 @@ class Contact {
     required this.url,
     required this.status,
     this.events = const [],
-    this.memos = const [], // デフォルトは空のリスト
+    this.memos = const [],
   });
 
-  /// 既存のデータを一部だけ変更した新しいインスタンスを返すメソッド
   Contact copyWith({
     String? companyName,
     String? personName,
@@ -71,5 +94,29 @@ class Contact {
       memos: memos ?? this.memos,
     );
   }
+
+  // ★修正点：オブジェクトの比較を可能にする
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Contact &&
+          runtimeType == other.runtimeType &&
+          companyName == other.companyName &&
+          personName == other.personName &&
+          phoneNumber == other.phoneNumber &&
+          url == other.url &&
+          status == other.status &&
+          listEquals(events, other.events) &&
+          listEquals(memos, other.memos);
+
+  @override
+  int get hashCode =>
+      companyName.hashCode ^
+      personName.hashCode ^
+      phoneNumber.hashCode ^
+      url.hashCode ^
+      status.hashCode ^
+      events.hashCode ^
+      memos.hashCode;
 }
 
