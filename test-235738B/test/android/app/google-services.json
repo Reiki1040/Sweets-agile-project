@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "496935912283",
+    "project_id": "enpit2025-agileproduct",
+    "storage_bucket": "enpit2025-agileproduct.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:496935912283:android:4f22b254fc20f96b5ed07e",
+        "android_client_info": {
+          "package_name": "enPit2025.test"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJV3CI0EHg5nlTHYoEPSe4hedmuQ1SqNo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
