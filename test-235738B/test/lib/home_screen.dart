@@ -88,7 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// ステータスフィルタ用のチップを生成するWidget
   Widget _buildStatusFilters() {
-    // 全てのステータスと「すべて」を追加したリストを作成
     final List<SelectionStatus?> allFilters = [null, ...SelectionStatus.values];
 
     return SingleChildScrollView(
@@ -97,16 +96,23 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: allFilters.map((status) {
           final isSelected = _selectedStatusFilter == status;
+          
+          // ★修正点：各ステータスの件数を計算
+          final count = status == null
+              ? widget.contacts.length // 「すべて」の場合は総件数
+              : widget.contacts.where((c) => c.status == status).length;
+          
+          final labelText = '${status?.displayName ?? 'すべて'} : $count';
+
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: ChoiceChip(
-              label: Text(status?.displayName ?? 'すべて'), // nullなら「すべて」と表示
+              label: Text(labelText), // ★修正点：件数付きのラベルを表示
               selected: isSelected,
               onSelected: (selected) {
                 setState(() {
-                  // チップ選択でフィルターの状態を更新
                   _selectedStatusFilter = selected ? status : null;
-                  _applyFilters(); // フィルターを再適用
+                  _applyFilters();
                 });
               },
             ),
@@ -124,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(8.0),
           child: TextField(
             controller: _searchController,
-            onChanged: (value) => _applyFilters(), // 入力ごとにフィルターを適用
+            onChanged: (value) => _applyFilters(),
             decoration: InputDecoration(
               labelText: '検索',
               hintText: '企業名, 担当者名, 電話番号...',
@@ -135,7 +141,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        // ステータスフィルター用のチップを追加
         _buildStatusFilters(),
         const SizedBox(height: 8),
         Expanded(

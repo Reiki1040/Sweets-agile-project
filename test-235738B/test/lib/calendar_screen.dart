@@ -57,7 +57,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         );
       }
     }
-    // 各日付のイベントを時間順にソート
     eventMap.forEach((key, value) {
       value.sort((a, b) => a.event.date.compareTo(b.event.date));
     });
@@ -90,6 +89,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
           selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
           onDaySelected: _onDaySelected,
           eventLoader: _getEventsForDay,
+          // ★修正点：表示を月表示に固定し、切り替えボタンを非表示にする
+          calendarFormat: CalendarFormat.month,
+          availableCalendarFormats: const {
+            CalendarFormat.month: 'Month',
+          },
         ),
         const SizedBox(height: 8.0),
         // 選択された日の予定一覧を表示
@@ -101,9 +105,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               return Card(
                 child: ListTile(
                   leading: const Icon(Icons.event_note),
-                  // ★修正点: 会社名も表示
                   title: Text('${displayEvent.companyName} - ${displayEvent.event.title}'),
-                  // ★修正点: 時間を表示
                   subtitle: Text(DateFormat('HH:mm').format(displayEvent.event.date)),
                 ),
               );
