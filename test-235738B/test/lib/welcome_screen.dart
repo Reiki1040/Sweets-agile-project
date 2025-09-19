@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart'; // 遷移先であるHomeScreen
+import 'main_screen.dart'; // 遷移先であるMainScreen
 
 /// ウェルカム画面
 /// アプリの概要説明と利用開始の起点。
@@ -59,10 +59,10 @@ class WelcomeScreen extends StatelessWidget {
   Widget _buildStartButton(BuildContext context) {
     return ElevatedButton(
       onPressed: () {
-        // HomeScreenへ画面遷移
+        // MainScreenへ画面遷移
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       },
       style: ElevatedButton.styleFrom(
